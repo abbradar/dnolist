@@ -12,16 +12,92 @@ build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
 
-executable dnolist
-  main-is:             Main.hs
-  -- other-modules:       
-  -- other-extensions:    
+library
+  exposed-modules:     DnoList.Types
+                     , DnoList.Database
+                     , DnoList.Wrapper
+                     , DnoList.OutgoingQueue
+                     , DnoList.Sysop
+                     , DnoList.Session
+                     , DnoList.SMTPServer
+  other-modules:       DnoList.SMTPCommands
+  default-extensions:  OverloadedStrings
+                     , NamedFieldPuns
+                     , DeriveGeneric
+                     , TemplateHaskell
+                     , QuasiQuotes
+                     , GeneralizedNewtypeDeriving
+                     , DataKinds
+                     , TypeOperators
+                     , ScopedTypeVariables
+                     , MultiParamTypeClasses
+                     , GADTs
+                     , TypeFamilies
+                     , FlexibleInstances
+                     , FlexibleContexts
+                     , UndecidableInstances
   build-depends:       base >=4.8 && <4.9
                      , text
-                     , conduit-network
-                     , persistent
-                     , stm
-                     , attoparsec
+                     , bytestring
+                     , warp
+                     , email
+                     , time
+                     , monad-loops
                      , smtp
+                     , persistent
+                     , persistent-template
+                     , persistent-postgresql
+                     , transformers
+                     , conduit-extra
+                     , network
+                     , esqueleto
+                     , attoparsec
+                     , either
+                     , monad-logger
+                     , monad-control
+                     , servant
+                     , servant-server
+                     , servant-client
+                     , yaml
+                     , aeson
+                     , HaskellNet
   hs-source-dirs:      src
+  default-language:    Haskell2010
+
+executable outgoing-queue
+  main-is:             OutgoingQueue.hs
+  hs-source-dirs:      exe
+  build-depends:       base >=4.8 && <4.9
+                     , dnolist
+  default-language:    Haskell2010
+
+executable session
+  main-is:             Session.hs
+  hs-source-dirs:      exe
+  build-depends:       base >=4.8 && <4.9
+                     , dnolist
+  default-language:    Haskell2010
+  
+executable migration
+  main-is:             Migration.hs
+  hs-source-dirs:      exe
+  build-depends:       base >=4.8 && <4.9
+                     , dnolist
+                     , monad-logger
+                     , persistent
+                     , persistent-postgresql
+  default-language:    Haskell2010
+
+executable smtp-server
+  main-is:             SMTPServer.hs
+  hs-source-dirs:      exe
+  build-depends:       base >=4.8 && <4.9
+                     , dnolist
+  default-language:    Haskell2010
+
+executable sysop
+  main-is:             Sysop.hs
+  hs-source-dirs:      exe
+  build-depends:       base >=4.8 && <4.9
+                     , dnolist
   default-language:    Haskell2010

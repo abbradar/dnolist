@@ -112,5 +112,5 @@ runSmtpServer :: Settings -> IO ()
 runSmtpServer settings =
   runStderrLoggingT $
   withPostgresqlPool (database settings) 4 $ \pool -> liftIO $ do
-    let server = serverSettings 25 "*"
+    let server = serverSettings 8025 "*"
     smtpServer pool server (domain settings)

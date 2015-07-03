@@ -76,10 +76,10 @@ sysopServer pool =
  :<|> subscribeList 
  :<|> unsubscribeList
  :<|> getAllUsers
- ) = client (Proxy :: Proxy SysopAPI) $ BaseUrl Http "sysop" 80
+ ) = client (Proxy :: Proxy SysopAPI) $ BaseUrl Http "database" 8081
 
 runSysop :: Settings -> IO ()
 runSysop settings =
   runStderrLoggingT $
   withPostgresqlPool (database settings) 4 $ \pool -> liftIO $ do
-    run 80 $ serve (Proxy :: Proxy SysopAPI) (sysopServer pool)
+    run 8081 $ serve (Proxy :: Proxy SysopAPI) (sysopServer pool)

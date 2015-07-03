@@ -65,4 +65,4 @@ runSession settings =
   runStderrLoggingT $
   withPostgresqlPool (database settings) 4 $ \pool -> liftIO $ do
     void $ forkIO $ cleanWorker pool
-    run 80 $ serve (Proxy :: Proxy SessionAPI) $ sessionServer (expiration settings) pool
+    run 8082 $ serve (Proxy :: Proxy SessionAPI) $ sessionServer (expiration settings) pool

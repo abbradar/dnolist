@@ -44,6 +44,7 @@ library
                      , time
                      , monad-loops
                      , smtp
+                     , pwstore-fast
                      , persistent
                      , persistent-template
                      , persistent-postgresql

@@ -4,6 +4,7 @@ import Control.Monad
 import Data.Proxy
 import Network.Wai.Handler.Warp (run)
 import Servant.API
+import Crypto.PasswordStore
 import Servant.Server
 import Database.Persist.Postgresql (withPostgresqlPool)
 import Control.Monad.Trans.Either
@@ -21,7 +22,7 @@ import DnoList.Database
 type SessionAPI = "users" :> ReqBody '[JSON] User :> Post '[JSON] UserId
              :<|> "users" :> Capture "userid" UserId :> "login" :> ReqBody '[JSON] Password :> Post '[JSON] (TokenId, UTCTime)
              :<|> "users" :> Capture "userid" UserId :> "logout" :> Put '[JSON] ()
-             :<|> "token" :> ReqBody '[JSON] TokenId :> Put '[JSON] UTCTime
+             :<|> "token" :> ReqBody '[JSON] TokenId :> Put '[JSON] (UserId, UTCTime)
              :<|> "token" :> ReqBody '[JSON] TokenId :> Delete '[JSON] ()
 
 sessionServer :: NominalDiffTime -> ConnectionPool -> Server SessionAPI
@@ -32,23 +33,26 @@ sessionServer expire pool =
   :<|> tokenUpdate
   :<|> tokenRemove
   
-  where userRegister user = run $ insert user
+  where userRegister user = run $ do
+          pwd <- liftIO $ makePassword (userPassword user) 17
+          let user' = user { userPassword = pwd }
+          insert user'
         userLogin uid pwd = run $ do
-          us <- select $ from $ \user -> do
-            where_ $ user^.UserId ==. val uid &&. user^.UserPassword ==. val pwd
-            return user
-          when (null us) $ lift $ left err403
+          u <- maybe (lift $ left err404) return =<< get uid
+          unless (verifyPassword pwd (userPassword u)) $ lift $ left err403
           etime <- liftIO $ addUTCTime expire <$> getCurrentTime
           tid <- insert $ Token uid etime
           return (tid, etime)
         userLogout uid = run $ delete $ from $ \token -> where_ $ token^.TokenUser ==. val uid
         tokenUpdate tid = run $ do
-          etime <- liftIO $ addUTCTime expire <$> getCurrentTime
-          n <- updateCount $ \token -> do
-            set token [ TokenExpiration =. val etime ]
-            where_ $ token^.TokenExpiration <. val etime &&. token^.TokenId ==. val tid
-          when (n == 0) $ lift $ left err403
-          return etime
+          r <- maybe (lift $ left err404) return =<< get tid
+          etime <- liftIO $ getCurrentTime
+          lift $ when (tokenExpiration r >= etime) $ left err403
+          let ntime = addUTCTime expire etime
+          update $ \token -> do
+            set token [ TokenExpiration =. val ntime ]
+            where_ $ token^.TokenId ==. val tid
+          return (tokenUser r, ntime)
         tokenRemove tid = run $ delete $ from $ \token -> where_ $ token^.TokenId ==. val tid
 
         run :: MonadBaseControl IO m => SqlPersistT m a -> m a

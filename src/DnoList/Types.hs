@@ -29,10 +29,10 @@ instance ToJSON PortNumber where
   toJSON = toJSON . (fromIntegral :: PortNumber -> Int)
 
 instance FromJSON NominalDiffTime where
-  parseJSON = liftM fromRational . parseJSON
+  parseJSON = liftM (fromRational . toRational :: Double -> NominalDiffTime) . parseJSON
 
 instance ToJSON NominalDiffTime where
-  toJSON = toJSON . toRational
+  toJSON = toJSON . (fromRational . toRational :: NominalDiffTime -> Double)
 
 data Settings = Settings { domain :: Domain
                          , smtpAddress :: Domain
